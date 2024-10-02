@@ -44,9 +44,6 @@ impl Window{
         window.set_cursor_pos_polling(true);
         window.set_framebuffer_size_polling(true);
 
-        window.set_cursor_mode(CursorMode::Hidden);
-        window.set_cursor_pos(w as f64 / 2.0, h as f64 / 2.0);
-
         let mut keyboard = HashMap::new();
 
         // Populate key_state with all possible Key variants
@@ -79,6 +76,18 @@ impl Window{
 
     pub fn should_close(&self) -> bool{
         self.window.should_close()
+    }
+
+    pub fn lock_cursor(&mut self){
+        if self.window.get_cursor_mode() == CursorMode::Normal{
+            self.window.set_cursor_mode(CursorMode::Hidden);
+            self.window.set_cursor_pos(self.w as f64 / 2.0, self.h as f64 / 2.0);
+        }
+        else{
+            self.window.set_cursor_mode(CursorMode::Normal);
+        }
+
+        //self.camera.fi
     }
 
     pub fn update(&mut self){
@@ -118,6 +127,9 @@ impl Window{
     pub fn process_events(&mut self) {
         self.glfw.poll_events();
 
+        self.last_mouse_pos = self.mouse_pos;
+        self.mouse_pos = vec2(self.window.get_cursor_pos().0 as f32, self.window.get_cursor_pos().1 as f32);
+
         for (_, event) in glfw::flush_messages(&self.events) {
             match event {
                 glfw::WindowEvent::FramebufferSize(width, height) => {
@@ -139,16 +151,15 @@ impl Window{
                     }
                 }
 
-                glfw::WindowEvent::CursorPos(x, y) => {
-                    self.window.set_cursor_pos(self.w as f64 / 2.0, self.h as f64 / 2.0);
-                    
-                    self.last_mouse_pos = self.mouse_pos;
-                    self.mouse_pos = vec2(x as f32, y as f32);
-
-                    let xoff = self.w as f32/2. - self.mouse_pos.x;
-                    let yoff = self.h as f32/2. - self.mouse_pos.y;
-                    
-                    self.camera.process_mouse_movement(-xoff, yoff, true);
+                glfw::WindowEvent::CursorPos(_, _) => {
+                    if self.window.get_cursor_mode() == CursorMode::Hidden{
+                        self.window.set_cursor_pos(self.w as f64 / 2.0, self.h as f64 / 2.0);
+                        
+                        let xoff = self.w as f32/2. - self.mouse_pos.x;
+                        let yoff = self.h as f32/2. - self.mouse_pos.y;
+                        
+                        self.camera.process_mouse_movement(-xoff, yoff, true);
+                    }
                 }
 
                 glfw::WindowEvent::MouseButton(button, action, _) => {

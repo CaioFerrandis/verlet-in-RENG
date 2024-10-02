@@ -17,6 +17,7 @@ use game_object::GameObject;
 use glam::{vec2, vec3, vec4, Quat, Vec2, Vec3, Vec4};
 
 use glfw::{Action, Key};
+use image::imageops::colorops;
 use light::{Light, LIGHTS};
 use line::Line;
 use mesh::Mesh;
@@ -80,6 +81,10 @@ pub fn main() {
         }
     }
 
+    let mut new_click = false;
+    let mut closest_particle: usize = 0;
+    let mouse_follow_speed = 8.;
+
     while !window.should_close() {
         let view_position = window.camera.position;
         window.clear_screen();
@@ -90,8 +95,19 @@ pub fn main() {
             LIGHTS[0].position = window.camera.position;
         }
 
-        if window.keyboard[&Key::Q] != Action::Release{
-            particles[0].translate(vec3(0., 2.*window.dt, 0.));
+        if window.keyboard[&Key::LeftAlt] == Action::Press{
+            window.lock_cursor();
+        }
+
+        if window.mouse_buttons[0] == true{
+            if new_click{
+                closest_particle = get_closest_particle_to_mouse(&particles, window.mouse_pos);
+                new_click = false;
+            }
+            particles[closest_particle].translate(vec3((window.mouse_pos.x - window.last_mouse_pos.x)*mouse_follow_speed/W as f32, -(window.mouse_pos.y - window.last_mouse_pos.y)*mouse_follow_speed/H as f32, 0.));
+        }
+        else{
+            new_click = true;
         }
 
         for obj in particles.iter(){
@@ -105,4 +121,14 @@ pub fn main() {
 
         window.update();
     }
+}
+
+pub fn get_closest_particle_to_mouse(particles: &Vec<GameObject<Mesh>>, mouse_pos: Vec2) -> usize{
+    let mut answer = 0;
+    for (index, particle) in particles.iter().enumerate(){
+        if particle.transform.position.distance(vec3(mouse_pos.x, mouse_pos.y, 0.)) < particles[answer].transform.position.distance(vec3(mouse_pos.x, mouse_pos.y, 0.)){
+            answer = index;
+        }
+    }
+    answer
 }

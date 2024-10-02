@@ -27,7 +27,7 @@ pub struct Camera{
     pub mouse_sensitivity: f32,
     pub zoom: f32,
 
-    first_mouse: bool,
+    pub first_mouse: bool,
 }
 
 impl Camera{
